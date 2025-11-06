@@ -55,7 +55,7 @@ void go(double angle, double speed) {
     
     auto err = plat.setSpeeds(speeds());
     
-    if(err) {
+    if(err.errcode != util::ErrorCode::success) {
         Serial.println(("Ooops, something went wrong in applying speeds to motors for linear movement of the platform: " + err.msg).c_str());
         Serial.println(err.msg.c_str());
     }
@@ -66,13 +66,20 @@ void move(double angle, double speed, ull_t delayMs) {
     delay(delayMs);
 }
 
-double speed = 1000;
-ull_t sectionTime = 3000;
+double speed = 200;
+ull_t sectionTime = 1000;
 
 void loop() {
+    // move(0, speed, sectionTime);
+    // move(90, speed, sectionTime);
+    // move(180, speed, sectionTime);
+    // move(-90, speed, sectionTime);
     move(0, speed, sectionTime);
+    move(45, speed, sectionTime);
     move(90, speed, sectionTime);
+    move(135, speed, sectionTime);
     move(180, speed, sectionTime);
+    move(-135, speed, sectionTime);
     move(-90, speed, sectionTime);
-    // plat.setSpeeds(platform::PlatformMotorSpeeds({motor::Speed(3000), motor::Speed(3000), motor::Speed(3000), motor::Speed(3000)}));
+    move(-45, speed, sectionTime);
 }
