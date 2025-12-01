@@ -1,0 +1,12 @@
+[submodule "lib/vislib"]
+	path = lib/vislib
+	url = https://github.com/allivka/vislib.git
+[submodule "lib/vislib_mpu6050"]
+	path = lib/vislib_mpu6050
+	url = https://github.com/allivka/vislib_mpu6050.git
+[submodule "lib/vislib_vex5"]
+	path = lib/vislib_vex5
+	url = https://github.com/allivka/vislib_vex5.git
+[submodule "lib/vex5"]
+	path = lib/vex5
+	url = https://github.com/allivka/vex5.git

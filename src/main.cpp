@@ -19,10 +19,14 @@ platform::PlatformMotorConfig config({
 
 platform::Platform<V5::motor::V5MotorController> plat(config);
 
+vislib_mpu6050::Gyroscope gyro;
+
 void setup() {  
     Vex5.begin();
     Serial.begin(9600);
-    
+
+    ::gyro.initialize();
+
     auto e = plat.init(util::Array<VEX5_PORT_t>({(VEX5_PORT_t)1, (VEX5_PORT_t)2, (VEX5_PORT_t)3, (VEX5_PORT_t)4}));
     
     if(e) {
