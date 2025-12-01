@@ -1,4 +1,5 @@
 #include "visioner.hpp"
+#include "util/time.hpp"
 
 using namespace vislib;
 
@@ -19,13 +20,29 @@ platform::PlatformMotorConfig config({
 
 platform::Platform<V5::motor::V5MotorController> plat(config);
 
-vislib_mpu6050::Gyroscope gyro;
+vislib_mpu6050::Gyroscope gyroSensor;
+
+struct MillisGetter : public util::TimeGetter<size_t, MillisGetter> {
+    util::Result<size_t> getTimeImplementation() const {
+        return static_cast<size_t>(millis());
+    }
+};
+
+vislib::util::Timer<size_t, MillisGetter> timer{MillisGetter()};
 
 void setup() {  
     Vex5.begin();
     Serial.begin(9600);
-
-    ::gyro.initialize();
+    
+    gyroSensor.initialize();
+    
+    timer.start();
+    
+    gyroSensor.initCalculator(
+        gyro::YPRElementCalculatorConfig<double, size_t, double>(),
+        gyro::YPRElementCalculatorConfig<double, size_t, double>(),
+        gyro::YPRElementCalculatorConfig<double, size_t, double>()
+    );
 
     auto e = plat.init(util::Array<VEX5_PORT_t>({(VEX5_PORT_t)1, (VEX5_PORT_t)2, (VEX5_PORT_t)3, (VEX5_PORT_t)4}));
     
