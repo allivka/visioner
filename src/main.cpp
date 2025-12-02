@@ -1,5 +1,5 @@
 #include "visioner.hpp"
-#include "util/time.hpp"
+#include <stdio.h>
 
 using namespace vislib;
 
@@ -28,7 +28,9 @@ struct MillisGetter : public util::TimeGetter<size_t, MillisGetter> {
     }
 };
 
-vislib::util::Timer<size_t, MillisGetter> timer{MillisGetter()};
+util::Timer<size_t, MillisGetter> timer{MillisGetter()};
+PIDRegulator<double, size_t> yawPid(0.5, 0.2, 0.1, 0.0);
+
 
 void setup() {  
     Vex5.begin();
@@ -95,12 +97,25 @@ void loop() {
     // move(90, speed, sectionTime);
     // move(180, speed, sectionTime);
     // move(-90, speed, sectionTime);
-    move(0, speed, sectionTime);
-    move(45, speed, sectionTime);
-    move(90, speed, sectionTime);
-    move(135, speed, sectionTime);
-    move(180, speed, sectionTime);
-    move(-135, speed, sectionTime);
-    move(-90, speed, sectionTime);
-    move(-45, speed, sectionTime);
+    // move(0, speed, sectionTime);
+    // move(45, speed, sectionTime);
+    // move(90, speed, sectionTime);
+    // move(135, speed, sectionTime);
+    // move(180, speed, sectionTime);
+    // move(-135, speed, sectionTime);
+    // move(-90, speed, sectionTime);
+    // move(-45, speed, sectionTime);
+    
+    double temp = yawPid.compute(gyroSensor.getYaw()(), timer.getTime()());
+    
+    Serial.print(sprintf("[%d.%d.%d ms]: yaw = %f;\tpitch = %f;\troll = %f;\tyawPid = %f\n",
+        timer.getTime()() / 1000,
+        (timer.getTime()() % 1000) / 100,
+        (timer.getTime()() % 100) /10,
+        gyroSensor.getYaw()(),
+        gyroSensor.getPitch()(),
+        gyroSensor.getRoll()(),
+        temp
+    ));
+    
 }
