@@ -1,5 +1,6 @@
 #include "visioner.hpp"
 #include <stdio.h>
+#include <Wire.h>
 
 using namespace vislib;
 
@@ -20,7 +21,7 @@ platform::PlatformMotorConfig config({
 
 platform::Platform<V5::motor::V5MotorController> plat(config);
 
-vislib_mpu6050::Gyroscope gyroSensor;
+vislib_mpu6050::GyroscopeCalculator mpu;
 
 struct MillisGetter : public util::TimeGetter<size_t, MillisGetter> {
     util::Result<size_t> getTimeImplementation() const {
@@ -29,68 +30,100 @@ struct MillisGetter : public util::TimeGetter<size_t, MillisGetter> {
 };
 
 util::Timer<size_t, MillisGetter> timer{MillisGetter()};
-PIDRegulator<double, size_t> yawPid(0.5, 0.2, 0.1, 0.0);
 
+char *str;
 
-void setup() {  
-    Vex5.begin();
-    Serial.begin(9600);
+void setup() {
     
-    gyroSensor.initialize();
+    str = (char*)(malloc(500));
+    
+    Serial.begin(9600);
+    delay(100);
+    
+    Wire.begin();
+    delay(100);
+    
+    Serial.println("Initializing MPU...");
+    
+    mpu.initialize();
+    delay(100);
+    
+    Serial.println("Testing MPU6050 connection...");
+    if(!mpu.testConnection()) {
+        Serial.println("MPU6050 connection failed");
+        while(true);
+    }
+    
+    Serial.println("MPU6050 connection successful");
+    
+    Serial.println("Calibrating gyroscope...\n");
+    
+    mpu.calibrate();
     
     timer.start();
     
-    gyroSensor.initCalculator(
-        gyro::YPRElementCalculatorConfig<double, size_t, double>(),
-        gyro::YPRElementCalculatorConfig<double, size_t, double>(),
-        gyro::YPRElementCalculatorConfig<double, size_t, double>()
+    Serial.println(timer.getTime()());
+    
+    Serial.println("initializing YPR calculator");
+    
+    auto temp = gyro::YPRElementCalculatorConfig<double, size_t, double>();
+    temp.integralWeight = 0.98;
+    
+    mpu.initCalculator(
+        temp,
+        temp,
+        temp
     );
-
-    auto e = plat.init(util::Array<VEX5_PORT_t>({(VEX5_PORT_t)1, (VEX5_PORT_t)2, (VEX5_PORT_t)3, (VEX5_PORT_t)4}));
     
-    if(e) {
-        Serial.print(e.msg.c_str());
-    }
+    // Serial.println("Initializing platform controller");
+    // Vex5.begin();
     
-    Serial.println();
-    Serial.println(motorInterfaceAngularSpeedRange.lowest);
-    Serial.println(motorInterfaceAngularSpeedRange.highest);
+    // auto e = plat.init(util::Array<VEX5_PORT_t>({(VEX5_PORT_t)1, (VEX5_PORT_t)2, (VEX5_PORT_t)3, (VEX5_PORT_t)4}));
     
-    delay(5000);
+    // if(e) {
+    //     Serial.print(e.msg.c_str());
+    // }
+    
+    Serial.println("Done startup");
+    // Serial.println();
+    // Serial.println(motorInterfaceAngularSpeedRange.lowest);
+    // Serial.println(motorInterfaceAngularSpeedRange.highest);
+    
+    // delay(5000);
     
 }
 
-void go(double angle, double speed) {
-    auto speeds = platform::calculators::calculatePlatformLinearSpeeds(config, angle, speed);
-    if(speeds) {
-        Serial.println(("Ooops, something went wrong in calculating speeds for linear movement of the platform: " + speeds.Err().msg).c_str());
-        return;
-    }
+// void go(double angle, double speed) {
+//     auto speeds = platform::calculators::calculatePlatformLinearSpeeds(config, angle, speed);
+//     if(speeds) {
+//         Serial.println(("Ooops, something went wrong in calculating speeds for linear movement of the platform: " + speeds.Err().msg).c_str());
+//         return;
+//     }
     
-    Serial.print("1: ");
-    Serial.print(speeds()[0]);
-    Serial.print("; 2: ");
-    Serial.print(speeds()[1]);
-    Serial.print("; 3: ");
-    Serial.print(speeds()[2]);
-    Serial.print("; 4: ");
-    Serial.println(speeds()[3]);
+//     Serial.print("1: ");
+//     Serial.print(speeds()[0]);
+//     Serial.print("; 2: ");
+//     Serial.print(speeds()[1]);
+//     Serial.print("; 3: ");
+//     Serial.print(speeds()[2]);
+//     Serial.print("; 4: ");
+//     Serial.println(speeds()[3]);
     
-    auto err = plat.setSpeeds(speeds());
+//     auto err = plat.setSpeeds(speeds());
     
-    if(err.errcode != util::ErrorCode::success) {
-        Serial.println(("Ooops, something went wrong in applying speeds to motors for linear movement of the platform: " + err.msg).c_str());
-        Serial.println(err.msg.c_str());
-    }
-}
+//     if(err.errcode != util::ErrorCode::success) {
+//         Serial.println(("Ooops, something went wrong in applying speeds to motors for linear movement of the platform: " + err.msg).c_str());
+//         Serial.println(err.msg.c_str());
+//     }
+// }
 
-void move(double angle, double speed, ull_t delayMs) {
-    go(angle, speed);
-    delay(delayMs);
-}
+// void move(double angle, double speed, ull_t delayMs) {
+//     go(angle, speed);
+//     delay(delayMs);
+// }
 
-double speed = 200;
-ull_t sectionTime = 1000;
+// double speed = 200;
+// ull_t sectionTime = 1000;
 
 void loop() {
     // move(0, speed, sectionTime);
@@ -106,16 +139,25 @@ void loop() {
     // move(-90, speed, sectionTime);
     // move(-45, speed, sectionTime);
     
-    double temp = yawPid.compute(gyroSensor.getYaw()(), timer.getTime()());
+    auto info = mpu.calculateGyroData(timer.getTime()());
     
-    Serial.print(sprintf("[%d.%d.%d ms]: yaw = %f;\tpitch = %f;\troll = %f;\tyawPid = %f\n",
+    if(info) {
+        Serial.println("SHIT");
+        Serial.println(info.Err().msg.c_str());
+        return;
+    }
+    
+    sprintf(str, "[%d %d ms]: speedX = %s;\tspeedY = %s;\tspeedZ = %s;\tyaw = %s;\tpitch = %s;\troll = %s\n",
         timer.getTime()() / 1000,
-        (timer.getTime()() % 1000) / 100,
-        (timer.getTime()() % 100) /10,
-        gyroSensor.getYaw()(),
-        gyroSensor.getPitch()(),
-        gyroSensor.getRoll()(),
-        temp
-    ));
+        timer.getTime()() % 1000,
+        String(info().speed[0]).c_str(),
+        String(info().speed[1]).c_str(),
+        String(info().speed[2]).c_str(),
+        String(info().ypr.yaw).c_str(),
+        String(info().ypr.pitch).c_str(),
+        String(info().ypr.roll).c_str()
+    );
+    
+    Serial.print(str);
     
 }
