@@ -4,22 +4,22 @@
 
 using namespace vislib;
 
-motor::SpeedRange rpmSpeedRange(-600, 600);
-motor::SpeedRange motorUseSpeedRange(-1500, 1500);
-motor::SpeedRange motorInterfaceAngularSpeedRange(
-    motorUseSpeedRange.mapValueToRange(-1500, rpmSpeedRange) * 2 * PI, motorUseSpeedRange.mapValueToRange(1500, rpmSpeedRange) * 2 * PI);
+// motor::SpeedRange rpmSpeedRange(-600, 600);
+// motor::SpeedRange motorUseSpeedRange(-1500, 1500);
+// motor::SpeedRange motorInterfaceAngularSpeedRange(
+//     motorUseSpeedRange.mapValueToRange(-1500, rpmSpeedRange) * 2 * PI, motorUseSpeedRange.mapValueToRange(1500, rpmSpeedRange) * 2 * PI);
+//
+// double wheelR = 0.1;
+// double motorDistance = 0.3;
 
-double wheelR = 0.1;
-double motorDistance = 0.3;
-
-platform::PlatformMotorConfig config({
-    motor::MotorInfo(90, motorDistance, wheelR, motorUseSpeedRange, motorInterfaceAngularSpeedRange),
-    motor::MotorInfo(180, motorDistance, wheelR, motorUseSpeedRange, motorInterfaceAngularSpeedRange),
-    motor::MotorInfo(-90, motorDistance, wheelR, motorUseSpeedRange, motorInterfaceAngularSpeedRange),
-    motor::MotorInfo(0, motorDistance, wheelR, motorUseSpeedRange, motorInterfaceAngularSpeedRange)
-});
-
-platform::Platform<V5::motor::V5MotorController> plat(config);
+// platform::PlatformMotorConfig config({
+//     motor::MotorInfo(90, motorDistance, wheelR, motorUseSpeedRange, motorInterfaceAngularSpeedRange),
+//     motor::MotorInfo(180, motorDistance, wheelR, motorUseSpeedRange, motorInterfaceAngularSpeedRange),
+//     motor::MotorInfo(-90, motorDistance, wheelR, motorUseSpeedRange, motorInterfaceAngularSpeedRange),
+//     motor::MotorInfo(0, motorDistance, wheelR, motorUseSpeedRange, motorInterfaceAngularSpeedRange)
+// });
+//
+// platform::Platform<V5::motor::V5MotorController> plat(config);
 
 vislib_mpu6050::GyroscopeCalculator mpu;
 
@@ -29,13 +29,13 @@ struct MillisGetter : public util::TimeGetter<size_t, MillisGetter> {
     }
 };
 
-util::Timer<size_t, MillisGetter> timer{MillisGetter()};
+util::IncrementTimer<size_t, MillisGetter> timer{MillisGetter()};
 
 char *str;
 
 void setup() {
     
-    str = (char*)(malloc(500));
+    str = static_cast<char*>(malloc(500));
     
     Serial.begin(9600);
     delay(100);
@@ -85,9 +85,6 @@ void setup() {
     // }
     
     Serial.println("Done startup");
-    // Serial.println();
-    // Serial.println(motorInterfaceAngularSpeedRange.lowest);
-    // Serial.println(motorInterfaceAngularSpeedRange.highest);
     
     // delay(5000);
     
@@ -138,7 +135,9 @@ void loop() {
     // move(-135, speed, sectionTime);
     // move(-90, speed, sectionTime);
     // move(-45, speed, sectionTime);
-    
+
+    ++timer;
+
     auto info = mpu.calculateGyroData(timer.getTime()());
     
     if(info) {
