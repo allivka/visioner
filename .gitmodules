@@ -7,6 +7,6 @@
 [submodule "lib/vislib_vex5"]
 	path = lib/vislib_vex5
 	url = https://github.com/allivka/vislib_vex5.git
-[submodule "lib/vex5"]
-	path = lib/vex5
-	url = https://github.com/allivka/vex5.git
+[submodule "lib/vislib_arduino"]
+	path = lib/vislib_arduino
+	url = https://github.com/allivka/vislib_arduino.git

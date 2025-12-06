@@ -21,17 +21,14 @@ using namespace vislib;
 //
 // platform::Platform<V5::motor::V5MotorController> plat(config);
 
-vislib_mpu6050::GyroscopeCalculator mpu;
 
-struct MillisGetter : public util::TimeGetter<size_t, MillisGetter> {
-    util::Result<size_t> getTimeImplementation() const {
-        return static_cast<size_t>(millis());
-    }
-};
-
-util::IncrementTimer<size_t, MillisGetter> timer{MillisGetter()};
+constexpr binds::arduino::port_t mpuInterruptPort = 2;
+binds::mpu6050::GyroscopeDMP mpu;
+util::IncrementTimer<size_t> timer(millis);
 
 char *str;
+
+
 
 void setup() {
     
@@ -39,41 +36,43 @@ void setup() {
     
     Serial.begin(9600);
     delay(100);
-    
+
+    Serial.println("Initialized serial\n\nInitializing timer");
+
+    timer.start();
+    delay(100);
+
+    Serial.println("Initialized timer\n\nInitializing I2C protocol");
+
     Wire.begin();
     delay(100);
     
-    Serial.println("Initializing MPU...");
+    Serial.println("Initialized I2C protocol\n\nInitializing MPU6050...");
     
     mpu.initialize();
+
+    Serial.println("Initialized MPU6050\n\nTesting MPU6050 connection...");
     delay(100);
-    
-    Serial.println("Testing MPU6050 connection...");
-    if(!mpu.testConnection()) {
-        Serial.println("MPU6050 connection failed");
-        while(true);
-    }
-    
-    Serial.println("MPU6050 connection successful");
-    
-    Serial.println("Calibrating gyroscope...\n");
-    
-    mpu.calibrate();
-    
-    timer.start();
-    
-    Serial.println(timer.getTime()());
-    
-    Serial.println("initializing YPR calculator");
-    
-    auto temp = gyro::YPRElementCalculatorConfig<double, size_t, double>();
-    temp.integralWeight = 0.98;
-    
-    mpu.initCalculator(
-        temp,
-        temp,
-        temp
+
+    if(!mpu.testConnection()) while(true) Serial.println("MPU6050 connection failed");
+
+    Serial.println("Initialized MPU6050\n\nInitializing MPU6050 DMP driver interrupt table");
+    delay(100);
+
+    util::Error e = binds::mpu6050::GyroscopeDMP::initInterruptTable(
+        util::Array<binds::arduino::port_t>(util::Array<binds::arduino::port_t>({mpuInterruptPort}))
     );
+
+    if (e) while (true) Serial.println(e.msg.c_str());
+
+    Serial.println("Initialized MPU6050 DMP driver interrupt table\n\nInitializing MPU6050 DMP");
+    delay(100);
+
+    e = mpu.initDMP(mpuInterruptPort);
+    if (e) while (true) Serial.println(e.msg.c_str());
+
+    Serial.println("Initialized MPU6050 DMP\n\n");
+    delay(100);
     
     // Serial.println("Initializing platform controller");
     // Vex5.begin();
@@ -84,7 +83,7 @@ void setup() {
     //     Serial.print(e.msg.c_str());
     // }
     
-    Serial.println("Done startup");
+    Serial.println("Done initialization");
     
     // delay(5000);
     
@@ -136,17 +135,9 @@ void loop() {
     // move(-90, speed, sectionTime);
     // move(-45, speed, sectionTime);
 
-    ++timer;
+    const auto info = mpu.getGyroData();
 
-    auto info = mpu.calculateGyroData(timer.getTime()());
-    
-    if(info) {
-        Serial.println("SHIT");
-        Serial.println(info.Err().msg.c_str());
-        return;
-    }
-    
-    sprintf(str, "[%d %d ms]: speedX = %s;\tspeedY = %s;\tspeedZ = %s;\tyaw = %s;\tpitch = %s;\troll = %s\n",
+    sprintf(str, "[%d %d ms]: speedX = %s;\t speedY = %s;\t speedZ = %s;\t yaw = %s;\t pitch = %s;\t roll = %s\n",
         timer.getTime()() / 1000,
         timer.getTime()() % 1000,
         String(info().speed[0]).c_str(),
@@ -156,7 +147,10 @@ void loop() {
         String(info().ypr.pitch).c_str(),
         String(info().ypr.roll).c_str()
     );
-    
+
+    ++timer;
+    mpu.update(nullptr);
+
     Serial.print(str);
     
 }
