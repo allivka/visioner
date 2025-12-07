@@ -31,7 +31,6 @@ char *str;
 
 
 void setup() {
-    
     str = static_cast<char*>(malloc(500));
     
     Serial.begin(9600);
