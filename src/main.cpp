@@ -24,54 +24,60 @@ using namespace vislib;
 
 constexpr binds::arduino::port_t mpuInterruptPort = 2;
 binds::mpu6050::GyroscopeDMP mpu;
-util::IncrementTimer<size_t> timer(millis);
+util::IncrementTimer<size_t> timer(binds::arduino::millisGetter);
 
 char *str;
 
 
-
 void setup() {
+    
+    pinMode(LED_BUILTIN, OUTPUT);
+    
     str = static_cast<char*>(malloc(500));
     
     Serial.begin(9600);
     delay(100);
 
     Serial.println("Initialized serial\n\nInitializing timer");
+    
+    auto e = timer.start();
+    
+    
+    if (e) while (true) Serial.println(String("Failed to initialize timer: ") + String(e.error().msg.c_str()));
 
-    timer.start();
     delay(100);
 
     Serial.println("Initialized timer\n\nInitializing I2C protocol");
 
     Wire.begin();
     delay(100);
-    
+
     Serial.println("Initialized I2C protocol\n\nInitializing MPU6050...");
-    
+
     mpu.initialize();
 
     Serial.println("Initialized MPU6050\n\nTesting MPU6050 connection...");
     delay(100);
 
-    if(!mpu.testConnection()) while(true) Serial.println("MPU6050 connection failed");
+    // if(!mpu.testConnection()) while(true) Serial.println("MPU6050 connection failed");
 
-    Serial.println("Initialized MPU6050\n\nInitializing MPU6050 DMP driver interrupt table");
-    delay(100);
+    // Serial.println("Initialized MPU6050\n\nInitializing MPU6050 DMP driver interrupt table");
+    // delay(100);
 
-    util::Error e = binds::mpu6050::GyroscopeDMP::initInterruptTable(
-        util::Array<binds::arduino::port_t>(util::Array<binds::arduino::port_t>({mpuInterruptPort}))
-    );
+    // auto er = binds::mpu6050::GyroscopeDMP::initInterruptTable(
+    //     util::Array<binds::arduino::port_t>(util::Array<binds::arduino::port_t>({mpuInterruptPort}))
+    // );
 
-    if (e) while (true) Serial.println(e.msg.c_str());
+    // if (er) while (true) Serial.println(er.msg.c_str());
 
-    Serial.println("Initialized MPU6050 DMP driver interrupt table\n\nInitializing MPU6050 DMP");
-    delay(100);
+    // Serial.println("Initialized MPU6050 DMP driver interrupt table\n\nInitializing MPU6050 DMP");
+    // delay(100);
 
-    e = mpu.initDMP(mpuInterruptPort);
-    if (e) while (true) Serial.println(e.msg.c_str());
+    // er = mpu.initDMP(mpuInterruptPort);
+    // if (er) while (true) Serial.println(er.msg.c_str());
 
-    Serial.println("Initialized MPU6050 DMP\n\n");
-    delay(100);
+    // Serial.println("Initialized MPU6050 DMP\n\n");
+    // delay(100);
     
     // Serial.println("Initializing platform controller");
     // Vex5.begin();
@@ -82,16 +88,19 @@ void setup() {
     //     Serial.print(e.msg.c_str());
     // }
     
-    Serial.println("Done initialization");
+    // Serial.println("\nDone initialization");
     
-    // delay(5000);
+    
+    digitalWrite(LED_BUILTIN, HIGH);
+    delay(500);
+    
     
 }
 
 // void go(double angle, double speed) {
 //     auto speeds = platform::calculators::calculatePlatformLinearSpeeds(config, angle, speed);
 //     if(speeds) {
-//         Serial.println(("Ooops, something went wrong in calculating speeds for linear movement of the platform: " + speeds.Err().msg).c_str());
+//         Serial.println(("Ooops, something went wrong in calculating speeds for linear movement of the platform: " + speeds.error().msg).c_str());
 //         return;
 //     }
     
@@ -120,7 +129,7 @@ void setup() {
 // double speed = 200;
 // ull_t sectionTime = 1000;
 
-void loop() {
+void loop() {      
     // move(0, speed, sectionTime);
     // move(90, speed, sectionTime);
     // move(180, speed, sectionTime);
@@ -134,22 +143,29 @@ void loop() {
     // move(-90, speed, sectionTime);
     // move(-45, speed, sectionTime);
 
-    const auto info = mpu.getGyroData();
-
-    sprintf(str, "[%d %d ms]: speedX = %s;\t speedY = %s;\t speedZ = %s;\t yaw = %s;\t pitch = %s;\t roll = %s\n",
-        timer.getTime()() / 1000,
-        timer.getTime()() % 1000,
-        String(info().speed[0]).c_str(),
-        String(info().speed[1]).c_str(),
-        String(info().speed[2]).c_str(),
-        String(info().ypr.yaw).c_str(),
-        String(info().ypr.pitch).c_str(),
-        String(info().ypr.roll).c_str()
-    );
-
-    ++timer;
-    mpu.update(nullptr);
-
-    Serial.print(str);
-    
+//     const auto info = mpu.getGyroData();
+//
+//     if (info) {
+//         sprintf(str, "Shit happened: %s\n", info.error().msg.c_str());
+//         goto usual;
+//     }
+//
+//     sprintf(str, "[%d %d ms]: speedX = %s;\t speedY = %s;\t speedZ = %s;\t yaw = %s;\t pitch = %s;\t roll = %s\n",
+//         timer.getTime()() / 1000,
+//         timer.getTime()() % 1000,
+//         String(info().speed[0]).c_str(),
+//         String(info().speed[1]).c_str(),
+//         String(info().speed[2]).c_str(),
+//         String(info().ypr.yaw).c_str(),
+//         String(info().ypr.pitch).c_str(),
+//         String(info().ypr.roll).c_str()
+//     );
+//
+//
+// usual:
+//     ++timer;
+//     mpu.update(nullptr);
+//
+//     Serial.print(str);
+//
 }
