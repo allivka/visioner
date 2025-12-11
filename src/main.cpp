@@ -52,32 +52,32 @@ void setup() {
     Wire.begin();
     delay(100);
 
-    Serial.println("Initialized I2C protocol\n\nInitializing MPU6050...");
+    Serial.println("Initialized I2C protocol\n\nInitializing MPU6050");
 
     mpu.initialize();
 
-    Serial.println("Initialized MPU6050\n\nTesting MPU6050 connection...");
+    Serial.println("Initialized MPU6050\n\nTesting MPU6050 connection");
     delay(100);
 
-    // if(!mpu.testConnection()) while(true) Serial.println("MPU6050 connection failed");
+    if(!mpu.testConnection()) while(true) Serial.println("MPU6050 connection failed");
 
-    // Serial.println("Initialized MPU6050\n\nInitializing MPU6050 DMP driver interrupt table");
-    // delay(100);
+    Serial.println("Initialized MPU6050\n\nInitializing MPU6050 DMP driver interrupt table");
+    delay(100);
 
-    // auto er = binds::mpu6050::GyroscopeDMP::initInterruptTable(
-    //     util::Array<binds::arduino::port_t>(util::Array<binds::arduino::port_t>({mpuInterruptPort}))
-    // );
+    auto er = binds::mpu6050::GyroscopeDMP::initInterruptTable(
+        util::Array<binds::arduino::port_t>(util::Array<binds::arduino::port_t>({mpuInterruptPort}))
+    );
 
-    // if (er) while (true) Serial.println(er.msg.c_str());
+    if (er) while (true) Serial.println(er.msg.c_str());
 
-    // Serial.println("Initialized MPU6050 DMP driver interrupt table\n\nInitializing MPU6050 DMP");
-    // delay(100);
+    Serial.println("Initialized MPU6050 DMP driver interrupt table\n\nInitializing MPU6050 DMP");
+    delay(100);
 
-    // er = mpu.initDMP(mpuInterruptPort);
-    // if (er) while (true) Serial.println(er.msg.c_str());
+    er = mpu.initDMP(mpuInterruptPort);
+    if (er) while (true) Serial.println(er.msg.c_str());
 
-    // Serial.println("Initialized MPU6050 DMP\n\n");
-    // delay(100);
+    Serial.println("Initialized MPU6050 DMP\n\n");
+    delay(100);
     
     // Serial.println("Initializing platform controller");
     // Vex5.begin();
@@ -88,7 +88,7 @@ void setup() {
     //     Serial.print(e.msg.c_str());
     // }
     
-    // Serial.println("\nDone initialization");
+    Serial.println("\nDone initialization");
     
     
     digitalWrite(LED_BUILTIN, HIGH);
