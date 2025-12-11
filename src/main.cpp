@@ -24,7 +24,7 @@ using namespace vislib;
 
 constexpr binds::arduino::port_t mpuInterruptPort = 2;
 binds::mpu6050::GyroscopeDMP mpu;
-util::IncrementTimer<size_t> timer(binds::arduino::millisGetter);
+util::IncrementTimer<binds::arduino::time_t> timer(binds::arduino::millisGetter);
 
 char *str;
 
