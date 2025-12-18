@@ -24,7 +24,9 @@ using namespace vislib;
 
 constexpr binds::arduino::port_t mpuInterruptPort = 2;
 binds::mpu6050::GyroscopeDMP mpu;
-util::IncrementTimer<binds::arduino::time_t> timer(binds::arduino::millisGetter);
+util::IncrementTimer<int64_t> timer([]() -> util::Result<int64_t> {
+    return static_cast<int64_t>(millis());
+});
 
 char *str;
 
@@ -73,8 +75,8 @@ void setup() {
     Serial.println("Initialized MPU6050 DMP driver interrupt table\n\nInitializing MPU6050 DMP");
     delay(100);
 
-    er = mpu.initDMP(mpuInterruptPort);
-    if (er) while (true) Serial.println(er.msg.c_str());
+    // er = mpu.initDMP(mpuInterruptPort);
+    // if (er) while (true) Serial.println(er.msg.c_str());
 
     Serial.println("Initialized MPU6050 DMP\n\n");
     delay(100);
@@ -142,30 +144,31 @@ void loop() {
     // move(-135, speed, sectionTime);
     // move(-90, speed, sectionTime);
     // move(-45, speed, sectionTime);
+    
+    const auto info = mpu.getGyroData();
 
-//     const auto info = mpu.getGyroData();
-//
-//     if (info) {
-//         sprintf(str, "Shit happened: %s\n", info.error().msg.c_str());
-//         goto usual;
-//     }
-//
-//     sprintf(str, "[%d %d ms]: speedX = %s;\t speedY = %s;\t speedZ = %s;\t yaw = %s;\t pitch = %s;\t roll = %s\n",
-//         timer.getTime()() / 1000,
-//         timer.getTime()() % 1000,
-//         String(info().speed[0]).c_str(),
-//         String(info().speed[1]).c_str(),
-//         String(info().speed[2]).c_str(),
-//         String(info().ypr.yaw).c_str(),
-//         String(info().ypr.pitch).c_str(),
-//         String(info().ypr.roll).c_str()
-//     );
-//
-//
-// usual:
-//     ++timer;
-//     mpu.update(nullptr);
-//
-//     Serial.print(str);
-//
+    if (info) {
+        sprintf(str, "Shit happened: %s\n", info.error().msg.c_str());
+        goto usual;
+    }
+
+    sprintf(str, "[%d %d ms]: speedX = %s;\t speedY = %s;\t speedZ = %s;\t yaw = %s;\t pitch = %s;\t roll = %s\n",
+        static_cast<size_t>(timer.getTime()() / 1000),
+        static_cast<size_t>(timer.getTime()() % 1000),
+        String(int(info().speed[0])).c_str(),
+        String(int(info().speed[1])).c_str(),
+        String(int(info().speed[2])).c_str(),
+        String(int(info().ypr.yaw)).c_str(),
+        String(int(info().ypr.pitch)).c_str(),
+        String(int(info().ypr.roll)).c_str()
+    );
+
+
+usual:
+    ++timer;
+    Serial.println(static_cast<size_t>(timer.getTime()() / 1000));
+    mpu.update(nullptr);
+
+    Serial.print(str);
+
 }
