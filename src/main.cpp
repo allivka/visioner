@@ -4,22 +4,22 @@
 
 using namespace vislib;
 
-// motor::SpeedRange rpmSpeedRange(-600, 600);
-// motor::SpeedRange motorUseSpeedRange(-1500, 1500);
-// motor::SpeedRange motorInterfaceAngularSpeedRange(
-//     motorUseSpeedRange.mapValueToRange(-1500, rpmSpeedRange) * 2 * PI, motorUseSpeedRange.mapValueToRange(1500, rpmSpeedRange) * 2 * PI);
-//
-// double wheelR = 0.1;
-// double motorDistance = 0.3;
+motor::SpeedRange rpmSpeedRange(-600, 600);
+motor::SpeedRange motorUseSpeedRange(-1500, 1500);
+motor::SpeedRange motorInterfaceAngularSpeedRange(
+    motorUseSpeedRange.mapValueToRange(-1500, rpmSpeedRange) * 2 * PI, motorUseSpeedRange.mapValueToRange(1500, rpmSpeedRange) * 2 * PI);
 
-// platform::PlatformMotorConfig config({
-//     motor::MotorInfo(90, motorDistance, wheelR, motorUseSpeedRange, motorInterfaceAngularSpeedRange),
-//     motor::MotorInfo(180, motorDistance, wheelR, motorUseSpeedRange, motorInterfaceAngularSpeedRange),
-//     motor::MotorInfo(-90, motorDistance, wheelR, motorUseSpeedRange, motorInterfaceAngularSpeedRange),
-//     motor::MotorInfo(0, motorDistance, wheelR, motorUseSpeedRange, motorInterfaceAngularSpeedRange)
-// });
-//
-// platform::Platform<V5::motor::V5MotorController> plat(config);
+constexpr double wheelR = 0.1;
+constexpr double motorDistance = 0.3;
+
+platform::PlatformMotorConfig config({
+    motor::MotorInfo(90, motorDistance, wheelR, motorUseSpeedRange, motorInterfaceAngularSpeedRange),
+    motor::MotorInfo(180, motorDistance, wheelR, motorUseSpeedRange, motorInterfaceAngularSpeedRange),
+    motor::MotorInfo(-90, motorDistance, wheelR, motorUseSpeedRange, motorInterfaceAngularSpeedRange),
+    motor::MotorInfo(0, motorDistance, wheelR, motorUseSpeedRange, motorInterfaceAngularSpeedRange)
+});
+
+platform::Platform<binds::vex5::motor::V5MotorController> plat(config);
 
 
 constexpr binds::arduino::port_t mpuInterruptPort = 2;
@@ -75,20 +75,18 @@ void setup() {
     Serial.println("Initialized MPU6050 DMP driver interrupt table\n\nInitializing MPU6050 DMP");
     delay(100);
 
-    // er = mpu.initDMP(mpuInterruptPort);
-    // if (er) while (true) Serial.println(er.msg.c_str());
+    er = mpu.initDMP(mpuInterruptPort);
+    if (er) while (true) Serial.println(er.msg.c_str());
 
     Serial.println("Initialized MPU6050 DMP\n\n");
     delay(100);
     
-    // Serial.println("Initializing platform controller");
-    // Vex5.begin();
+    Serial.println("Initializing platform controller");
+    Vex5.begin();
     
-    // auto e = plat.init(util::Array<VEX5_PORT_t>({(VEX5_PORT_t)1, (VEX5_PORT_t)2, (VEX5_PORT_t)3, (VEX5_PORT_t)4}));
+    er = plat.init(util::Array<VEX5_PORT_t>({(VEX5_PORT_t)1, (VEX5_PORT_t)2, (VEX5_PORT_t)3, (VEX5_PORT_t)4}));
     
-    // if(e) {
-    //     Serial.print(e.msg.c_str());
-    // }
+    if (er) while (true) Serial.println(er.msg.c_str());
     
     Serial.println("\nDone initialization");
     
