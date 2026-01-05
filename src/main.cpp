@@ -24,12 +24,13 @@ platform::Platform<binds::vex5::motor::V5MotorController> plat(config);
 
 constexpr binds::arduino::port_t mpuInterruptPort = 2;
 binds::mpu6050::GyroscopeDMP mpu;
-util::IncrementTimer<int64_t> timer([]() -> util::Result<int64_t> {
+core::IncrementTimer<int64_t> timer([]() -> core::Result<int64_t> {
     return static_cast<int64_t>(millis());
 });
 
 char *str;
 
+binds::mpu6050::DMPInterruptHandler<0> gyroInterruptHandler;
 
 void setup() {
     
@@ -67,7 +68,7 @@ void setup() {
     delay(100);
 
     auto er = binds::mpu6050::GyroscopeDMP::initInterruptTable(
-        util::Array<binds::arduino::port_t>(util::Array<binds::arduino::port_t>({mpuInterruptPort}))
+        core::Array<binds::arduino::port_t>(core::Array<binds::arduino::port_t>({mpuInterruptPort}))
     );
 
     if (er) while (true) Serial.println(er.msg.c_str());
@@ -75,7 +76,7 @@ void setup() {
     Serial.println("Initialized MPU6050 DMP driver interrupt table\n\nInitializing MPU6050 DMP");
     delay(100);
 
-    er = mpu.initDMP(mpuInterruptPort);
+    er = mpu.initDMP<0>(mpuInterruptPort);
     if (er) while (true) Serial.println(er.msg.c_str());
 
     Serial.println("Initialized MPU6050 DMP\n\n");
@@ -84,7 +85,7 @@ void setup() {
     Serial.println("Initializing platform controller");
     Vex5.begin();
     
-    er = plat.init(util::Array<VEX5_PORT_t>({(VEX5_PORT_t)1, (VEX5_PORT_t)2, (VEX5_PORT_t)3, (VEX5_PORT_t)4}));
+    er = plat.init(core::Array<VEX5_PORT_t>({(VEX5_PORT_t)1, (VEX5_PORT_t)2, (VEX5_PORT_t)3, (VEX5_PORT_t)4}));
     
     if (er) while (true) Serial.println(er.msg.c_str());
     
