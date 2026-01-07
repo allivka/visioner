@@ -10,3 +10,6 @@
 [submodule "lib/vislib_arduino"]
 	path = lib/vislib_arduino
 	url = https://github.com/allivka/vislib_arduino.git
+[submodule "lib/vislib_robo"]
+	path = lib/vislib_robo
+	url = https://github.com/allivka/vislib_robo.git
