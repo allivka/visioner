@@ -23,14 +23,12 @@ platform::Platform<binds::vex5::motor::V5MotorController> plat(config);
 
 
 constexpr binds::arduino::port_t mpuInterruptPort = 2;
-binds::mpu6050::GyroscopeDMP mpu;
+binds::mpu6050::GyroscopeDMP<0> mpu;
 core::IncrementTimer<int64_t> timer([]() -> core::Result<int64_t> {
     return static_cast<int64_t>(millis());
 });
 
 char *str;
-
-binds::mpu6050::DMPInterruptHandler<0> gyroInterruptHandler;
 
 void setup() {
     
@@ -64,30 +62,25 @@ void setup() {
 
     if(!mpu.testConnection()) while(true) Serial.println("MPU6050 connection failed");
 
-    Serial.println("Initialized MPU6050\n\nInitializing MPU6050 DMP driver interrupt table");
+    Serial.println("Initialized MPU6050\n\nInitializing MPU6050 DMP");
     delay(100);
 
-    auto er = binds::mpu6050::GyroscopeDMP::initInterruptTable(
-        core::Array<binds::arduino::port_t>(core::Array<binds::arduino::port_t>({mpuInterruptPort}))
-    );
 
-    if (er) while (true) Serial.println(er.msg.c_str());
-
-    Serial.println("Initialized MPU6050 DMP driver interrupt table\n\nInitializing MPU6050 DMP");
-    delay(100);
-
-    er = mpu.initDMP<0>(mpuInterruptPort);
+    auto er = mpu.initDMP(mpuInterruptPort);
     if (er) while (true) Serial.println(er.msg.c_str());
 
     Serial.println("Initialized MPU6050 DMP\n\n");
     delay(100);
     
-    Serial.println("Initializing platform controller");
-    Vex5.begin();
+    // Serial.println("Initializing platform controller");
+    // Vex5.begin();
     
-    er = plat.init(core::Array<VEX5_PORT_t>({(VEX5_PORT_t)1, (VEX5_PORT_t)2, (VEX5_PORT_t)3, (VEX5_PORT_t)4}));
+    // er = plat.init(core::Array<VEX5_PORT_t>({(VEX5_PORT_t)1, (VEX5_PORT_t)2, (VEX5_PORT_t)3, (VEX5_PORT_t)4}));
     
-    if (er) while (true) Serial.println(er.msg.c_str());
+    // if (er) while (true) Serial.println(er.msg.c_str());
+    
+    // Serial.println("Initialized platform controller");
+    // delay(100);
     
     Serial.println("\nDone initialization");
     
@@ -165,7 +158,6 @@ void loop() {
 
 usual:
     ++timer;
-    Serial.println(static_cast<size_t>(timer.getTime()() / 1000));
     mpu.update(nullptr);
 
     Serial.print(str);
