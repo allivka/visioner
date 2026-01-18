@@ -72,15 +72,19 @@ void setup() {
     Serial.println("Initialized MPU6050 DMP\n\n");
     delay(100);
     
-    // Serial.println("Initializing platform controller");
-    // Vex5.begin();
+    Serial.println("Initializing platform controller shield");
+    if (Vex5.begin(500000, -1)) while (true) Serial.println("Failed to initialize VEX5 motor shield");
     
-    // er = plat.init(core::Array<VEX5_PORT_t>({(VEX5_PORT_t)1, (VEX5_PORT_t)2, (VEX5_PORT_t)3, (VEX5_PORT_t)4}));
+    Serial.println("Initialized platform controller shield\n\n");
+    delay(100);
     
-    // if (er) while (true) Serial.println(er.msg.c_str());
+    Serial.println("Initializing platform controller");
+    er = plat.init(core::Array<VEX5_PORT_t>({(VEX5_PORT_t)1, (VEX5_PORT_t)2, (VEX5_PORT_t)3, (VEX5_PORT_t)4}));
     
-    // Serial.println("Initialized platform controller");
-    // delay(100);
+    if (er) while (true) Serial.println(er.msg.c_str());
+    
+    Serial.println("Initialized platform controller");
+    delay(100);
     
     Serial.println("\nDone initialization");
     
