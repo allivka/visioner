@@ -3,13 +3,12 @@ package sci
 //SCI = Serial Communication Interface
 
 import (
-	"bytes"
 	"context"
-	"encoding/binary"
 	"fmt"
 	"log"
 	"log/slog"
 	"time"
+	"unsafe"
 
 	"go.bug.st/serial"
 )
@@ -30,14 +29,9 @@ func RunSCI(ctx context.Context, c SCIConfig) chan float64 {
 			select {
 			case value := <-c.In:
 				go func(ctx context.Context) {
-					buff, err := value.Serialize()
+					buff:= value.Serialize()
 
-					if err != nil {
-						slog.Warn(fmt.Sprintf("Failed serializing behavior package: %v", err))
-						return
-					}
-
-					_, err = c.Port.Write(buff.Bytes())
+					_, err := c.Port.Write(buff)
 
 					if err != nil {
 						slog.Warn(fmt.Sprintf("Failed sending data over serial port: %v", err))
@@ -85,12 +79,7 @@ func RunSCI(ctx context.Context, c SCIConfig) chan float64 {
 					continue
 				}
 
-				err = binary.Read(bytes.NewBuffer(buffer), binary.BigEndian, value)
-
-				if err != nil {
-					slog.Warn(fmt.Sprintf("Failed deserializing data received over serial: %v", err))
-					continue
-				}
+				value = *(*float64)(unsafe.Pointer(unsafe.SliceData(buffer)))
 
 				serialReceiver <- value
 			}
