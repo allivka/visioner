@@ -4,11 +4,12 @@ package sci
 
 import (
 	"context"
+	"encoding/binary"
 	"fmt"
 	"log"
 	"log/slog"
+	"math"
 	"time"
-	"unsafe"
 
 	"go.bug.st/serial"
 )
@@ -24,22 +25,26 @@ type SCIConfig struct {
 func RunSCI(ctx context.Context, c SCIConfig) chan float64 {
 
 	go func(ctx context.Context) {
-		ctx2, cancel := context.WithTimeout(ctx, c.PerWriteTimeout)
+		cancels := make([]func(), 1)
 		for {
 			select {
 			case value := <-c.In:
+				ct, cancel := context.WithTimeout(ctx, c.PerWriteTimeout)
+				cancels = append(cancels, cancel)
 				go func(ctx context.Context) {
-					buff:= value.Serialize()
+					buff := value.Serialize()
 
 					_, err := c.Port.Write(buff)
 
 					if err != nil {
 						slog.Warn(fmt.Sprintf("Failed sending data over serial port: %v", err))
 					}
-				}(ctx2)
+				}(ct)
 
 			case <-ctx.Done():
-				cancel()
+				for _, cancel := range cancels {
+					cancel()
+				}
 				slog.Info("Exiting serial writer goroutine")
 				return
 			}
@@ -50,11 +55,12 @@ func RunSCI(ctx context.Context, c SCIConfig) chan float64 {
 
 	go func(ctx context.Context) {
 
-		buffer := make([]byte, 8)
+		buffer := make([]byte, 20)
 
 		var (
 			err   error
 			value float64
+			counter int
 		)
 
 		err = c.Port.SetReadTimeout(c.ReadTimeout)
@@ -72,16 +78,22 @@ func RunSCI(ctx context.Context, c SCIConfig) chan float64 {
 				return
 
 			default:
-				_, err = c.Port.Read(buffer)
+				n, err := c.Port.Read(buffer[counter:])
 
 				if err != nil {
 					slog.Warn(fmt.Sprintf("Failed receiving data over serial port: %v", err))
 					continue
 				}
+				counter += n
+				
+				if counter == 8 {
+					counter = 0
+					value = math.Float64frombits(binary.LittleEndian.Uint64(buffer[:8]))
+					
+					serialReceiver <- value
+				}
 
-				value = *(*float64)(unsafe.Pointer(unsafe.SliceData(buffer)))
-
-				serialReceiver <- value
+				
 			}
 		}
 	}(ctx)

@@ -2,13 +2,14 @@ package main
 
 import (
 	"context"
+	"encoding/binary"
 	"fmt"
 	"io"
 	"log"
 	"log/slog"
+	"math"
 	"net/http"
 	"time"
-	"unsafe"
 
 	"github.com/allivka/visioner/unit_gate/sci"
 	"go.bug.st/serial"
@@ -66,13 +67,10 @@ func serveGate(port serial.Port) func() {
 
 			case http.MethodGet:
 				angle := <-receiver
-
-				writer.Write(unsafe.Slice((*byte)(unsafe.Pointer(&angle)), unsafe.Sizeof(angle)))
-
 				writer.WriteHeader(http.StatusOK)
-
-			default:
-				writer.WriteHeader(http.StatusNotImplemented)
+				buffer := make([]byte, 8)
+				binary.LittleEndian.PutUint64(buffer, math.Float64bits(angle))
+				writer.Write(buffer)
 			}
 		}),
 	}

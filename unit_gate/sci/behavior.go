@@ -1,13 +1,14 @@
 package sci
 
 import (
+	"encoding/binary"
 	"fmt"
-	"unsafe"
+	"math"
 )
 
 var (
 	InvalidBehaviorFormat error = fmt.Errorf("Invalid format of behavior package")
-	TooSmallBufferError error = fmt.Errorf("Too small buffer")
+	TooSmallBufferError   error = fmt.Errorf("Too small buffer")
 )
 
 type Behavior struct {
@@ -24,37 +25,31 @@ func NewBehavior() Behavior {
 }
 
 func (Behavior) Size() int {
-	return 8 * 4 + 1 * 2;
+	return 8*4 + 1*2
 }
 
-func (this Behavior) Serialize() ([]byte) {
-	
+func (this Behavior) Serialize() []byte {
+
 	buffer := make([]byte, this.Size())
+
+	binary.LittleEndian.PutUint64(buffer[0:8], math.Float64bits(this.Angle))
+	binary.LittleEndian.PutUint64(buffer[8:16], math.Float64bits(this.Speed))
+	binary.LittleEndian.PutUint64(buffer[16:24], math.Float64bits(this.RotationSpeed))
+	binary.LittleEndian.PutUint64(buffer[24:32], math.Float64bits(this.SpeedK))
+
+	if this.IsHeadRelative {
+		buffer[32] = 1
+	} else {
+		buffer[32] = 0
+	}
 	
-	ptr := unsafe.SliceData(buffer)
-	
-	f64ptr := (*float64)(unsafe.Pointer(ptr))
-	
-	*f64ptr = this.Angle
-	f64ptr = (*float64)(unsafe.Add(unsafe.Pointer(f64ptr), 8))
-	
-	*f64ptr = this.Speed
-	f64ptr = (*float64)(unsafe.Add(unsafe.Pointer(f64ptr), 8))
-	
-	*f64ptr = this.RotationSpeed
-	f64ptr = (*float64)(unsafe.Add(unsafe.Pointer(f64ptr), 8))
-	
-	*f64ptr = this.SpeedK
-	f64ptr = (*float64)(unsafe.Add(unsafe.Pointer(f64ptr), 8))
-	
-	boolPtr := (*bool)(unsafe.Pointer(f64ptr))
-	
-	*boolPtr = this.IsHeadRelative
-	boolPtr = (*bool)(unsafe.Add(unsafe.Pointer(boolPtr), 1))
-	
-	*boolPtr = this.EnableHeadSync
-	
-	
+
+	if this.EnableHeadSync {
+		buffer[33] = 1
+	} else {
+		buffer[33] = 0
+	}
+
 	return buffer
 }
 
@@ -62,30 +57,15 @@ func (this *Behavior) Deserialize(buffer []byte) (*Behavior, error) {
 	if len(buffer) < this.Size() {
 		return this, TooSmallBufferError
 	}
-	
-	ptr := unsafe.SliceData(buffer)
-	
-	f64ptr := (*float64)(unsafe.Pointer(ptr))
-	
-	this.Angle = *f64ptr
-	f64ptr = (*float64)(unsafe.Add(unsafe.Pointer(f64ptr), 8))
-	
-	this.Speed = *f64ptr
-	f64ptr = (*float64)(unsafe.Add(unsafe.Pointer(f64ptr), 8))
-	
-	this.RotationSpeed = *f64ptr
-	f64ptr = (*float64)(unsafe.Add(unsafe.Pointer(f64ptr), 8))
-	
-	this.SpeedK = *f64ptr
-	f64ptr = (*float64)(unsafe.Add(unsafe.Pointer(f64ptr), 8))
-	
-	boolPtr := (*bool)(unsafe.Pointer(f64ptr))
-	
-	this.IsHeadRelative = *boolPtr
-	boolPtr = (*bool)(unsafe.Add(unsafe.Pointer(boolPtr), 1))
-	
-	this.EnableHeadSync = *boolPtr
-	
+
+	this.Angle = math.Float64frombits(binary.LittleEndian.Uint64(buffer[0:8]))
+	this.Speed = math.Float64frombits(binary.LittleEndian.Uint64(buffer[8:16]))
+	this.RotationSpeed = math.Float64frombits(binary.LittleEndian.Uint64(buffer[16:24]))
+	this.SpeedK = math.Float64frombits(binary.LittleEndian.Uint64(buffer[24:32]))
+
+	this.IsHeadRelative = buffer[32] == 1
+	this.EnableHeadSync = buffer[33] == 1
+
 	return this, nil
 }
 
