@@ -69,12 +69,6 @@ func serveGate(port serial.Port) func() {
 
 				writer.Write(unsafe.Slice((*byte)(unsafe.Pointer(&angle)), unsafe.Sizeof(angle)))
 
-				if err != nil {
-					slog.Warn(fmt.Sprintf("Failed writing angle to response: %v", err))
-					writer.WriteHeader(http.StatusInternalServerError)
-					writer.Write([]byte(err.Error()))
-				}
-
 				writer.WriteHeader(http.StatusOK)
 
 			default:
