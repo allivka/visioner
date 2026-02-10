@@ -1,15 +1,14 @@
 package main
 
 import (
-	"bytes"
 	"context"
-	"encoding/binary"
 	"fmt"
 	"io"
 	"log"
 	"log/slog"
 	"net/http"
 	"time"
+	"unsafe"
 
 	"github.com/allivka/visioner/unit_gate/sci"
 	"go.bug.st/serial"
@@ -54,7 +53,7 @@ func serveGate(port serial.Port) func() {
 			case http.MethodPut:
 				fallthrough
 			case http.MethodPost:
-				behavior, err := sci.ValidateBehaviorBuffer(*bytes.NewBuffer(body))
+				behavior, err := sci.ValidateBehaviorBuffer(body)
 
 				if err != nil {
 					slog.Warn(fmt.Sprintf("Invalid behavior packet received: %v", err))
@@ -68,7 +67,7 @@ func serveGate(port serial.Port) func() {
 			case http.MethodGet:
 				angle := <-receiver
 
-				err := binary.Write(writer, binary.BigEndian, angle)
+				writer.Write(unsafe.Slice((*byte)(unsafe.Pointer(&angle)), unsafe.Sizeof(angle)))
 
 				if err != nil {
 					slog.Warn(fmt.Sprintf("Failed writing angle to response: %v", err))
