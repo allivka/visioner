@@ -1,31 +1,46 @@
 package main
 
 import (
-	"image/color"
-	"time"
+	"fmt"
 
+	// "fyne.io/fyne/v2"
 	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/canvas"
+	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/layout"
+	"fyne.io/fyne/v2/widget"
+
+	"fyne.io/fyne/v2/app"
 )
 
 func main() {
-	a := app.New()
-	w := a.NewWindow("Hello")
+	
+	
+	application := app.New()
+	
+	loginWindow := application.NewWindow("Login")
+	
+	label := widget.NewLabel("Enter visioner device IP address please:")
+	input := widget.NewEntry()
+	
+	robotImage := canvas.NewImageFromFile("robot.png")
+	robotImage.SetMinSize(fyne.NewSize(500, 500))
+	
+	content := container.NewVBox(label, input, widget.NewButton("Submit", func() {
+		fmt.Println(input.Text)
+		loginWindow.Close()
+		
+		window := application.NewWindow("Visioner controller")
+		window.SetContent(container.New(layout.NewCenterLayout(),
+			robotImage,
+		))
+		window.Show()
+	}))
 
-	output := canvas.NewText(time.Now().Format(time.TimeOnly), color.NRGBA{G: 0xff, A: 0xff})
-	output.TextStyle.Monospace = true
-	output.TextSize = 32
-	w.SetContent(output)
-
-	go func() {
-		ticker := time.NewTicker(time.Second)
-		for range ticker.C {
-			fyne.Do(func() {
-				output.Text = time.Now().Format(time.TimeOnly)
-				output.Refresh()
-			})
-		}
-	}()
-	w.ShowAndRun()
+	loginWindow.SetContent(content)
+	
+	loginWindow.Show()
+	
+	application.Run()
 }
+	
