@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 
-	// "fyne.io/fyne/v2"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
@@ -17,6 +16,7 @@ func main() {
 	
 	
 	application := app.New()
+	application.SetIcon(canvas.NewImageFromFile("Icon.png").Resource)
 	
 	loginWindow := application.NewWindow("Login")
 	
@@ -43,4 +43,3 @@ func main() {
 	
 	application.Run()
 }
-	
