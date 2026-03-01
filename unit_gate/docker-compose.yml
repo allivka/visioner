@@ -3,7 +3,7 @@ services:
     container_name: visioner_unit_gate_server
     build: .
     ports:
-      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:80:80"
     restart: "always"
     privileged: true
     volumes:

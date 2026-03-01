@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	serverPort = 8080
+	serverPort = 80
 )
 
 func serveGate(port serial.Port) func() {

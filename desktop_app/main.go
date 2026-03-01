@@ -1,8 +1,13 @@
 package main
 
 import (
+	"encoding/binary"
 	"fmt"
 	"image/color"
+	"io"
+	"log/slog"
+	"math"
+	"net/http"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -15,21 +20,46 @@ import (
 	"fyne.io/fyne/v2/app"
 )
 
-func getAngle() float64 {
+type Visioner struct {
+	url string
+}
+
+func(v Visioner) getAngle() (float32, error) {
+	resp, err := http.Get(v.url)
 	
-	return 0
+	if err != nil {
+		slog.Warn(err.Error())
+		return 0, err
+	}
+	
+	buffer, err := io.ReadAll(resp.Body)
+	
+	if err != nil {
+		slog.Warn(err.Error())
+		return 0, err
+	}
+	
+	return math.Float32frombits(binary.LittleEndian.Uint32(buffer)), nil
 }
 
 func main() {
 	
+	var visioner Visioner
 	
 	application := app.New()
 	application.SetIcon(canvas.NewImageFromFile("Icon.png").Resource)
 	
 	loginWindow := application.NewWindow("Login")
 	
-	label := widget.NewLabel("Enter visioner device IP address please:")
+	label := widget.NewLabel("Enter visioner device URL please:")
 	input := widget.NewEntry()
+	input.Validator = func(s string) error {
+		
+		visioner.url = s
+		_, err := visioner.getAngle()
+		
+		return err
+	}
 	
 	robotImage := canvas.NewImageFromFile("robot.png")
 	robotImage.FillMode = canvas.ImageFillOriginal
@@ -51,6 +81,7 @@ func main() {
 	
 	content := container.NewVBox(label, input, widget.NewButton("Submit", func() {
 		fmt.Println(input.Text)
+		
 		loginWindow.Close()
 		
 		window.Show()
@@ -65,7 +96,7 @@ func main() {
 		
 		for range ticker.C {
 			fyne.Do(func() {
-				angleText.Text = "Angle: " + fmt.Sprint(getAngle())
+				angleText.Text = "Angle: " + fmt.Sprint(visioner.getAngle())
 				angleText.Refresh()
 			})
 		}
