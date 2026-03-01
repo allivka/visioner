@@ -12,10 +12,10 @@ var (
 )
 
 type Behavior struct {
-	Angle          float64 `json:"angle"`
-	Speed          float64 `json:"speed"`
-	RotationSpeed  float64 `json:"rotationSpeed"`
-	SpeedK         float64 `json:"speedK"`
+	Angle          float32 `json:"angle"`
+	Speed          float32 `json:"speed"`
+	RotationSpeed  float32 `json:"rotationSpeed"`
+	SpeedK         float32 `json:"speedK"`
 	IsHeadRelative bool    `json:"isHeadRelative"`
 	EnableHeadSync bool    `json:"enableHeadSync"`
 }
@@ -32,10 +32,10 @@ func (this Behavior) Serialize() []byte {
 
 	buffer := make([]byte, this.Size())
 
-	binary.LittleEndian.PutUint64(buffer[0:8], math.Float64bits(this.Angle))
-	binary.LittleEndian.PutUint64(buffer[8:16], math.Float64bits(this.Speed))
-	binary.LittleEndian.PutUint64(buffer[16:24], math.Float64bits(this.RotationSpeed))
-	binary.LittleEndian.PutUint64(buffer[24:32], math.Float64bits(this.SpeedK))
+	binary.LittleEndian.PutUint32(buffer[0:8], math.Float32bits(this.Angle))
+	binary.LittleEndian.PutUint32(buffer[8:16], math.Float32bits(this.Speed))
+	binary.LittleEndian.PutUint32(buffer[16:24], math.Float32bits(this.RotationSpeed))
+	binary.LittleEndian.PutUint32(buffer[24:32], math.Float32bits(this.SpeedK))
 
 	if this.IsHeadRelative {
 		buffer[32] = 1
@@ -58,10 +58,10 @@ func (this *Behavior) Deserialize(buffer []byte) (*Behavior, error) {
 		return this, TooSmallBufferError
 	}
 
-	this.Angle = math.Float64frombits(binary.LittleEndian.Uint64(buffer[0:8]))
-	this.Speed = math.Float64frombits(binary.LittleEndian.Uint64(buffer[8:16]))
-	this.RotationSpeed = math.Float64frombits(binary.LittleEndian.Uint64(buffer[16:24]))
-	this.SpeedK = math.Float64frombits(binary.LittleEndian.Uint64(buffer[24:32]))
+	this.Angle = math.Float32frombits(binary.LittleEndian.Uint32(buffer[0:8]))
+	this.Speed = math.Float32frombits(binary.LittleEndian.Uint32(buffer[8:16]))
+	this.RotationSpeed = math.Float32frombits(binary.LittleEndian.Uint32(buffer[16:24]))
+	this.SpeedK = math.Float32frombits(binary.LittleEndian.Uint32(buffer[24:32]))
 
 	this.IsHeadRelative = buffer[32] == 1
 	this.EnableHeadSync = buffer[33] == 1

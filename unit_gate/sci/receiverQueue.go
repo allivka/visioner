@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-func MaintainChannel(ctx context.Context, flow chan float64, target int, cycle time.Duration) {
+func MaintainChannel(ctx context.Context, flow chan float32, target int, cycle time.Duration) {
 	go func(ctx context.Context) {
 		timer := time.NewTimer(cycle)
 		for {

@@ -22,7 +22,7 @@ type SCIConfig struct {
 	QueueSize       int
 }
 
-func RunSCI(ctx context.Context, c SCIConfig) chan float64 {
+func RunSCI(ctx context.Context, c SCIConfig) chan float32 {
 
 	go func(ctx context.Context) {
 		cancels := make([]func(), 1)
@@ -51,7 +51,7 @@ func RunSCI(ctx context.Context, c SCIConfig) chan float64 {
 		}
 	}(ctx)
 
-	serialReceiver := make(chan float64, c.QueueSize)
+	serialReceiver := make(chan float32, c.QueueSize)
 
 	go func(ctx context.Context) {
 
@@ -59,7 +59,7 @@ func RunSCI(ctx context.Context, c SCIConfig) chan float64 {
 
 		var (
 			err   error
-			value float64
+			value float32
 			counter int
 		)
 
@@ -88,7 +88,7 @@ func RunSCI(ctx context.Context, c SCIConfig) chan float64 {
 				
 				if counter == 8 {
 					counter = 0
-					value = math.Float64frombits(binary.LittleEndian.Uint64(buffer[:8]))
+					value = math.Float32frombits(binary.LittleEndian.Uint32(buffer[:8]))
 					
 					serialReceiver <- value
 				}

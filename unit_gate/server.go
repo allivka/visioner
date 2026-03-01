@@ -69,7 +69,7 @@ func serveGate(port serial.Port) func() {
 				angle := <-receiver
 				writer.WriteHeader(http.StatusOK)
 				buffer := make([]byte, 8)
-				binary.LittleEndian.PutUint64(buffer, math.Float64bits(angle))
+				binary.LittleEndian.PutUint32(buffer, math.Float32bits(angle))
 				writer.Write(buffer)
 			}
 		}),
