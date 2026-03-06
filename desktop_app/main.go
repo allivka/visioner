@@ -10,14 +10,12 @@ import (
 	"net/http"
 	"time"
 
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
-
-	// "fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
-
-	"fyne.io/fyne/v2/app"
 )
 
 type Visioner struct {
@@ -53,13 +51,13 @@ func main() {
 	
 	label := widget.NewLabel("Enter visioner device URL please:")
 	input := widget.NewEntry()
-	input.Validator = func(s string) error {
+	// input.Validator = func(s string) error {
 		
-		visioner.url = s
-		_, err := visioner.getAngle()
+	// 	visioner.url = s
+	// 	_, err := visioner.getAngle()
 		
-		return err
-	}
+	// 	return err
+	// }
 	
 	robotImage := canvas.NewImageFromFile("robot.png")
 	robotImage.FillMode = canvas.ImageFillOriginal
@@ -82,6 +80,13 @@ func main() {
 	content := container.NewVBox(label, input, widget.NewButton("Submit", func() {
 		fmt.Println(input.Text)
 		
+		_, err := visioner.getAngle()
+		
+		if err != nil {
+			dialog.ShowInformation("Error, Invalid visioner URL", err.Error(), loginWindow)
+			return
+		}
+		
 		loginWindow.Close()
 		
 		window.Show()
@@ -96,7 +101,7 @@ func main() {
 		
 		for range ticker.C {
 			fyne.Do(func() {
-				angleText.Text = "Angle: " + fmt.Sprint(visioner.getAngle())
+				// angleText.Text = "Angle: " + fmt.Sprint(visioner.getAngle())
 				angleText.Refresh()
 			})
 		}
