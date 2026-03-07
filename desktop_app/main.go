@@ -19,11 +19,11 @@ import (
 )
 
 type Visioner struct {
-	url string
+	address string
 }
 
 func(v Visioner) getAngle() (float32, error) {
-	resp, err := http.Get(v.url)
+	resp, err := http.Get("http://" + v.address)
 	
 	if err != nil {
 		slog.Warn(err.Error())
@@ -135,7 +135,7 @@ func main() {
 	
 	loginWindow := application.NewWindow("Login")
 	
-	label := widget.NewLabel("Enter visioner device URL please:")
+	label := widget.NewLabel("Enter visioner device address please:")
 	input := widget.NewEntry()
 	
 	circle :=  canvas.NewCircle(color.Black)
@@ -168,11 +168,11 @@ func main() {
 	
 	content := container.NewVBox(label, input, widget.NewButton("Submit", func() {
 		
-		visioner.url = input.Text
+		visioner.address = input.Text
 		_, err := visioner.getAngle()
 		
 		if err != nil && input.Text != "pass" {
-			dialog.ShowInformation("Error, Invalid visioner URL", err.Error(), loginWindow)
+			dialog.ShowInformation("Error, Invalid visioner device address", err.Error(), loginWindow)
 			return
 		}
 		
