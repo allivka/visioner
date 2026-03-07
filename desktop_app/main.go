@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/binary"
-	"fmt"
+	// "fmt"
 	"image/color"
 	"io"
 	"log/slog"
@@ -10,11 +10,11 @@ import (
 	"net/http"
 	"time"
 
-	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 )
 
@@ -51,16 +51,16 @@ func main() {
 	
 	label := widget.NewLabel("Enter visioner device URL please:")
 	input := widget.NewEntry()
-	// input.Validator = func(s string) error {
-		
-	// 	visioner.url = s
-	// 	_, err := visioner.getAngle()
-		
-	// 	return err
-	// }
 	
 	robotImage := canvas.NewImageFromFile("robot.png")
 	robotImage.FillMode = canvas.ImageFillOriginal
+	circle :=  canvas.NewCircle(color.Black)
+	circle.StrokeWidth = 5
+	circle.Resize(fyne.NewSize(400, 400))
+	circle.StrokeColor = color.Black
+	circle.FillColor = color.White
+	circleContainer := container.NewStack(container.NewWithoutLayout(circle))
+	circleContainer.Resize(fyne.NewSize(400, 400))
 	
 	angleText := canvas.NewText("Angle: 0", color.Black)
 	angleText.TextSize = 32
@@ -69,25 +69,40 @@ func main() {
 	
 	window.SetContent(container.NewStack(
 		canvas.NewRectangle(color.White),
-		container.NewCenter(
-			container.NewVBox(
-				container.NewCenter(angleText),
-				robotImage,
-			),
+		container.NewVBox(
+			container.NewCenter(angleText),
+			circleContainer,
 		),
 	))
+	window.Resize(fyne.NewSize(500, 500))
+	
 	
 	content := container.NewVBox(label, input, widget.NewButton("Submit", func() {
-		fmt.Println(input.Text)
 		
+		
+		visioner.url = input.Text
 		_, err := visioner.getAngle()
 		
-		if err != nil {
+		if err != nil && input.Text != "pass" {
 			dialog.ShowInformation("Error, Invalid visioner URL", err.Error(), loginWindow)
 			return
 		}
 		
 		loginWindow.Close()
+		
+		go func() {
+			ticker := time.NewTicker(time.Second / 60)
+			s := fyne.NewSize(0, 0)
+			
+			for range ticker.C {
+				fyne.Do(func() {
+					s = fyne.NewSize(circleContainer.Size().Width - 50, window.Canvas().Size().Height - label.Size().Height - 50)
+					circle.Resize(fyne.NewSize(min(s.Height, s.Width), min(s.Height, s.Width)))
+					circle.Move(fyne.NewPos(s.Width / 2 - circle.Size().Width / 2 + 25, 25))
+					circle.Refresh()
+				})
+			}
+		}()
 		
 		window.Show()
 	}))
