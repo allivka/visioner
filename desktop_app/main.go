@@ -131,7 +131,7 @@ func main() {
 	)
 	
 	application := app.New()
-	application.SetIcon(canvas.NewImageFromFile("Icon.png").Resource)
+	application.SetIcon(canvas.NewImageFromFile("robot.png").Resource)
 	
 	loginWindow := application.NewWindow("Login")
 	
