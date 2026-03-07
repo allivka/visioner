@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"encoding/binary"
 	"fmt"
@@ -8,15 +9,18 @@ import (
 	"log"
 	"log/slog"
 	"math"
+	"net"
 	"net/http"
 	"time"
 
 	"github.com/allivka/visioner/unit_gate/sci"
 	"go.bug.st/serial"
+	"gocv.io/x/gocv"
 )
 
 const (
 	serverPort = 80
+	cameraStreamPort = ":8080"
 )
 
 func serveGate(port serial.Port) func() {
@@ -83,7 +87,65 @@ func serveGate(port serial.Port) func() {
 			return
 		}
 	}()
-
+	
+	go func() {
+		listener, err := net.Listen("tcp", cameraStreamPort)
+		
+		if err != nil {
+			log.Fatal(err)
+		}
+		
+		defer listener.Close()
+		
+		connection, err := listener.Accept()
+		
+		for err != nil {
+			slog.Warn(err.Error())
+			connection, err = listener.Accept()
+		}
+		
+		defer connection.Close()
+		
+		writer := bufio.NewWriter(connection)
+		_ = writer
+		camera, err := gocv.OpenVideoCapture(0)
+		
+		if err != nil {
+			slog.Warn(err.Error())
+			return
+		}
+		
+		defer camera.Close()
+		
+		camera.Set(gocv.VideoCaptureFrameWidth, 640)
+		camera.Set(gocv.VideoCaptureFrameHeight, 480)
+		
+		mat := gocv.NewMat()
+		
+		defer mat.Close()
+		
+		for {
+			if ok := camera.Read(&mat); !ok || mat.Empty() {
+				continue
+			}
+			
+			buff, err := gocv.IMEncode(".jpg", mat)
+			
+			if err != nil {
+				slog.Warn(err.Error())
+				continue
+			}
+			
+			data := buff.GetBytes()
+			binary.Write(writer, binary.LittleEndian, uint32(len(data)))
+			writer.Write(data)
+			writer.Flush()
+			
+			buff.Close()
+		}
+		
+	}()
+	
 	return func() {
 		cancel()
 		err := server.Close()
