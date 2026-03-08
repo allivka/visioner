@@ -55,7 +55,7 @@ func RunSCI(ctx context.Context, c SCIConfig) chan float32 {
 
 	go func(ctx context.Context) {
 
-		buffer := make([]byte, 20)
+		buffer := make([]byte, 4)
 
 		var (
 			err   error

@@ -64,6 +64,7 @@ func serveGate(port serial.Port) func() {
 					slog.Warn(fmt.Sprintf("Invalid behavior packet received: %v", err))
 					writer.WriteHeader(http.StatusBadRequest)
 					writer.Write([]byte(err.Error()))
+					return
 				}
 
 				in <- behavior
@@ -73,7 +74,7 @@ func serveGate(port serial.Port) func() {
 				angle := <-receiver
 				// angle := float32(23)
 				writer.WriteHeader(http.StatusOK)
-				buffer := make([]byte, 8)
+				buffer := make([]byte, 4)
 				binary.LittleEndian.PutUint32(buffer, math.Float32bits(angle))
 				writer.Write(buffer)
 			}

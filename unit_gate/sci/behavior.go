@@ -25,29 +25,29 @@ func NewBehavior() Behavior {
 }
 
 func (Behavior) Size() int {
-	return 8*4 + 1*2
+	return 4*4 + 1*2
 }
 
 func (this Behavior) Serialize() []byte {
 
 	buffer := make([]byte, this.Size())
 
-	binary.LittleEndian.PutUint32(buffer[0:8], math.Float32bits(this.Angle))
-	binary.LittleEndian.PutUint32(buffer[8:16], math.Float32bits(this.Speed))
-	binary.LittleEndian.PutUint32(buffer[16:24], math.Float32bits(this.RotationSpeed))
-	binary.LittleEndian.PutUint32(buffer[24:32], math.Float32bits(this.SpeedK))
+	binary.LittleEndian.PutUint32(buffer[0:4], math.Float32bits(this.Angle))
+	binary.LittleEndian.PutUint32(buffer[4:8], math.Float32bits(this.Speed))
+	binary.LittleEndian.PutUint32(buffer[8:12], math.Float32bits(this.RotationSpeed))
+	binary.LittleEndian.PutUint32(buffer[12:16], math.Float32bits(this.SpeedK))
 
 	if this.IsHeadRelative {
-		buffer[32] = 1
+		buffer[16] = 1
 	} else {
-		buffer[32] = 0
+		buffer[17] = 0
 	}
 	
 
 	if this.EnableHeadSync {
-		buffer[33] = 1
+		buffer[16] = 1
 	} else {
-		buffer[33] = 0
+		buffer[17] = 0
 	}
 
 	return buffer
@@ -58,13 +58,13 @@ func (this *Behavior) Deserialize(buffer []byte) (*Behavior, error) {
 		return this, TooSmallBufferError
 	}
 
-	this.Angle = math.Float32frombits(binary.LittleEndian.Uint32(buffer[0:8]))
-	this.Speed = math.Float32frombits(binary.LittleEndian.Uint32(buffer[8:16]))
-	this.RotationSpeed = math.Float32frombits(binary.LittleEndian.Uint32(buffer[16:24]))
-	this.SpeedK = math.Float32frombits(binary.LittleEndian.Uint32(buffer[24:32]))
+	this.Angle = math.Float32frombits(binary.LittleEndian.Uint32(buffer[0:4]))
+	this.Speed = math.Float32frombits(binary.LittleEndian.Uint32(buffer[4:8]))
+	this.RotationSpeed = math.Float32frombits(binary.LittleEndian.Uint32(buffer[8:12]))
+	this.SpeedK = math.Float32frombits(binary.LittleEndian.Uint32(buffer[12:16]))
 
-	this.IsHeadRelative = buffer[32] == 1
-	this.EnableHeadSync = buffer[33] == 1
+	this.IsHeadRelative = buffer[16] == 1
+	this.EnableHeadSync = buffer[17] == 1
 
 	return this, nil
 }
