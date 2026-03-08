@@ -168,11 +168,9 @@ func main() {
 	streamWindow := application.NewWindow("camera stream")
 	streamWindow.Resize(fyne.NewSize(640, 480))
 	streamWindow.SetContent(streamContainer)
+	streamWindow.SetMaster()
 	
 	window := application.NewWindow("Visioner controller")
-	
-	
-	
 	window.SetContent(container.NewStack(
 		canvas.NewRectangle(color.White),
 	
@@ -183,7 +181,7 @@ func main() {
 		),
 	))
 	window.Resize(fyne.NewSize(500, 500))
-	
+	window.SetMaster()
 	
 	content := container.NewVBox(label, input, widget.NewButton("Submit", func() {
 		
@@ -353,7 +351,7 @@ func main() {
 			
 			for event := sdl.PollEvent(); true; event = sdl.PollEvent() {
 				if event == nil {
-					sdl.Delay(1)
+					sdl.Delay(10)
 					continue
 				}
 				
@@ -367,7 +365,18 @@ func main() {
 					}
 					
 					fmt.Println(e.Button)
+				case *sdl.ControllerAxisEvent:
+					v := float64(e.Value) /32768.0
+					
+					if math.Abs(v) < 0.3 {
+						continue
+					}
+					
+					fmt.Println(e.Which, e.Axis, v)
+				
 				}
+				
+				sdl.Delay(10)
 			}
 			
 		}()
