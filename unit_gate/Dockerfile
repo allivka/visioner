@@ -11,6 +11,7 @@ WORKDIR /app
 COPY --from=builder /build/server /app/server
 
 EXPOSE 80
+EXPOSE 8080
 
 ENTRYPOINT [ "./server"]
 CMD [""]

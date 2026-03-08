@@ -124,8 +124,12 @@ func serveGate(port serial.Port) func() {
 		
 		defer mat.Close()
 		
+		var (
+			ok bool
+		)
+		
 		for {
-			if ok := camera.Read(&mat); !ok || mat.Empty() {
+			if ok = camera.Read(&mat); !ok || mat.Empty() {
 				continue
 			}
 			

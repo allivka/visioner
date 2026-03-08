@@ -1,12 +1,17 @@
 package main
 
 import (
+	"bufio"
+	"bytes"
 	"encoding/binary"
 	"fmt"
+	"image"
 	"image/color"
+	"image/jpeg"
 	"io"
 	"log/slog"
 	"math"
+	"net"
 	"net/http"
 	"time"
 
@@ -131,7 +136,6 @@ func main() {
 	)
 	
 	application := app.New()
-	application.SetIcon(canvas.NewImageFromFile("robot.png").Resource)
 	
 	loginWindow := application.NewWindow("Login")
 	
@@ -154,13 +158,24 @@ func main() {
 	angleText := canvas.NewText("Angle: 0", color.Black)
 	angleText.TextSize = 32
 	
+	streamContainer := canvas.NewImageFromImage(nil)
+	streamContainer.FillMode = canvas.ImageFillContain
+	
+	streamWindow := application.NewWindow("camera stream")
+	streamWindow.Resize(fyne.NewSize(640, 480))
+	streamWindow.SetContent(streamContainer)
+	
 	window := application.NewWindow("Visioner controller")
+	
+	
 	
 	window.SetContent(container.NewStack(
 		canvas.NewRectangle(color.White),
+	
 		container.NewVBox(
 			container.NewCenter(angleText),
 			robotContainer,
+			
 		),
 	))
 	window.Resize(fyne.NewSize(500, 500))
@@ -238,7 +253,65 @@ func main() {
 			}
 		}()
 		
+		go func () {
+			connection, err := net.Dial("tcp", visioner.address + ":8080")
+			
+			for err != nil {
+				slog.Warn(err.Error())
+				time.Sleep(1 * time.Second)
+				connection, err = net.Dial("tcp", visioner.address + ":8080")
+			}
+			
+			defer connection.Close()
+			
+			reader := bufio.NewReader(connection)
+			
+			var (
+				length uint32
+				n int
+				frame image.Image
+			)
+			
+			
+			for {
+				err = binary.Read(reader, binary.LittleEndian, &length)
+				
+				if err != nil {
+					slog.Warn(err.Error())
+					continue
+				}
+				
+				data := make([]byte, length)
+				
+				n, err = reader.Read(data)
+				
+				if err != nil {
+					slog.Warn(err.Error())
+					continue
+				}
+				
+				if n < int(length) {
+					slog.Warn("The amount of read bytes is less then stated size of the frame")
+				}
+				
+				frame, err = jpeg.Decode(bytes.NewReader(data))
+				
+				if err != nil {
+					slog.Warn(err.Error())
+					continue
+				}
+				
+				fyne.Do(func ()  {
+					streamContainer.Image = frame
+					streamContainer.Refresh()
+				})
+				
+				
+			}
+		}()
+		
 		window.Show()
+		streamWindow.Show()
 	}))
 	
 	loginWindow.SetContent(content)
