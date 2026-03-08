@@ -77,5 +77,7 @@ func main() {
 
 	port := openPort()
 	serveGate(port)
+	
+	for {}
 
 }

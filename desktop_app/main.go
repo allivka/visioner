@@ -35,6 +35,8 @@ func(v Visioner) getAngle() (float32, error) {
 		return 0, err
 	}
 	
+	defer resp.Body.Close()
+	
 	buffer, err := io.ReadAll(resp.Body)
 	
 	if err != nil {
@@ -193,7 +195,12 @@ func main() {
 		
 		loginWindow.Close()
 		
+		slog.Info("Starting main app")
+		
 		go func() {
+			
+			slog.Info("Starting visualization ")
+			
 			ticker := time.NewTicker(time.Second / 60)
 			s := fyne.NewSize(0, 0)
 			pos := fyne.NewPos(0, 0)
@@ -226,6 +233,8 @@ func main() {
 		time.Sleep(time.Microsecond * 100)
 		
 		go func(){
+			slog.Info("Starting angle data receiver")
+			
 			ticker := time.NewTicker(time.Second / 10)
 			var (
 				err error
@@ -236,14 +245,14 @@ func main() {
 			
 			for range ticker.C {
 				fyne.Do(func() {
-					// angle, err = visioner.getAngle()
+					angle, err = visioner.getAngle()
 					
-					// if err != nil {
-					// 	slog.Warn(err.Error())
-					// 	return
-					// }
+					if err != nil {
+						slog.Warn(err.Error())
+						return
+					}
 					
-					angle++
+					// angle++
 					
 					angleChan <- angle
 					
@@ -254,6 +263,9 @@ func main() {
 		}()
 		
 		go func () {
+			
+			slog.Info("Starting video stream receiver")
+			
 			connection, err := net.Dial("tcp", visioner.address + ":8080")
 			
 			for err != nil {
@@ -263,6 +275,8 @@ func main() {
 			}
 			
 			defer connection.Close()
+			
+			slog.Info("Established connection with video stream sender")
 			
 			reader := bufio.NewReader(connection)
 			
@@ -283,7 +297,7 @@ func main() {
 				
 				data := make([]byte, length)
 				
-				n, err = reader.Read(data)
+				n, err = io.ReadFull(reader, data)
 				
 				if err != nil {
 					slog.Warn(err.Error())

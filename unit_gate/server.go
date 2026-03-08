@@ -37,13 +37,13 @@ func serveGate(port serial.Port) func() {
 		In:              in,
 	})
 
-	sci.MaintainChannel(ctx, receiver, 9, 200*time.Millisecond)
+	sci.MaintainChannel(ctx, receiver, 9, 100*time.Millisecond)
 
 	server := http.Server{
 		Addr:         fmt.Sprintf(":%v", serverPort),
 		ReadTimeout:  time.Second * 10,
 		WriteTimeout: time.Second * 10,
-
+		
 		Handler: http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 			defer request.Body.Close()
 
@@ -71,6 +71,7 @@ func serveGate(port serial.Port) func() {
 
 			case http.MethodGet:
 				angle := <-receiver
+				// angle := float32(23)
 				writer.WriteHeader(http.StatusOK)
 				buffer := make([]byte, 8)
 				binary.LittleEndian.PutUint32(buffer, math.Float32bits(angle))
