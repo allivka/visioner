@@ -72,6 +72,7 @@ func serveGate(port serial.Port) func() {
 
 			case http.MethodGet:
 				angle := <-receiver
+				// fmt.Println(angle)
 				// angle := float32(23)
 				writer.WriteHeader(http.StatusOK)
 				buffer := make([]byte, 4)

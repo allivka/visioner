@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/binary"
 	"fmt"
+	"io"
 	"log"
 	"log/slog"
 	"math"
@@ -60,7 +61,7 @@ func RunSCI(ctx context.Context, c SCIConfig) chan float32 {
 		var (
 			err   error
 			value float32
-			counter int
+			n int
 		)
 
 		err = c.Port.SetReadTimeout(c.ReadTimeout)
@@ -77,21 +78,21 @@ func RunSCI(ctx context.Context, c SCIConfig) chan float32 {
 				slog.Info("Exiting serial receiver goroutine")
 				return
 
-			default:
-				n, err := c.Port.Read(buffer[counter:])
+			default:				
+				n, err = io.ReadFull(c.Port, buffer)
 
 				if err != nil {
 					slog.Warn(fmt.Sprintf("Failed receiving data over serial port: %v", err))
 					continue
 				}
-				counter += n
 				
-				if counter == 8 {
-					counter = 0
-					value = math.Float32frombits(binary.LittleEndian.Uint32(buffer[:8]))
-					
-					serialReceiver <- value
+				if n < 4 {
+					slog.Warn("Got less data then expected")
 				}
+				
+				value = math.Float32frombits(binary.LittleEndian.Uint32(buffer[:4]))
+				
+				serialReceiver <- value
 
 				
 			}
