@@ -2,7 +2,10 @@ module github.com/allivka/visioner/desktop_app
 
 go 1.25.6
 
-require fyne.io/fyne/v2 v2.7.2
+require (
+	fyne.io/fyne/v2 v2.7.2
+	github.com/veandco/go-sdl2 v0.4.40
+)
 
 require (
 	fyne.io/systray v1.12.0 // indirect

@@ -14,6 +14,7 @@ import (
 	"net"
 	"net/http"
 	"time"
+	"log"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -21,6 +22,7 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
+	"github.com/veandco/go-sdl2/sdl"
 )
 
 type Visioner struct {
@@ -322,6 +324,52 @@ func main() {
 				
 				
 			}
+		}()
+		
+		go func() {
+			if err := sdl.Init(sdl.INIT_GAMECONTROLLER); err != nil {
+				log.Fatal(err)
+			}
+			defer sdl.Quit()
+			
+			var controller *sdl.GameController
+			
+			outer:
+			for controller == nil {
+				slog.Info("Attempting to find a controller")
+				
+				for i := 0; i < sdl.NumJoysticks(); i++ {
+					if sdl.IsGameController(i) {
+						controller = sdl.GameControllerOpen(i)
+						if controller != nil {
+							slog.Info("Found controller:" + controller.Name())
+							break outer
+						}
+					}
+				}
+			}
+			
+			defer controller.Close()
+			
+			for event := sdl.PollEvent(); true; event = sdl.PollEvent() {
+				if event == nil {
+					sdl.Delay(1)
+					continue
+				}
+				
+				switch e := event.(type) {
+				case *sdl.ControllerButtonEvent:
+					switch e.State {
+					case sdl.PRESSED:
+						fmt.Print("Button pressed: ")
+					case sdl.RELEASED:
+						fmt.Print("Button release: ")
+					}
+					
+					fmt.Println(e.Button)
+				}
+			}
+			
 		}()
 		
 		window.Show()
