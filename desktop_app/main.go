@@ -23,6 +23,7 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 	"github.com/veandco/go-sdl2/sdl"
+	"github.com/allivka/visioner/unit_gate/sci"
 )
 
 type Visioner struct {
@@ -252,8 +253,6 @@ func main() {
 						return
 					}
 					
-					// angle++
-					
 					angleChan <- angle
 					
 					angleText.Text = "Angle: " + fmt.Sprint(angle) + "°"
@@ -351,34 +350,67 @@ func main() {
 			
 			prev := time.Now()
 			
-			for {
+			beh := sci.Behavior {
+				Speed: 3000,
+				SpeedK: 1,
+			}
 			
-				for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
+			type JoyStick struct {
+				x float32
+				y float32
+			}
+			
+			type GamePadState struct {
+				left JoyStick
+				right JoyStick
+				pressed bool
+			}
+			
+			state := GamePadState {}
+			
+			processEvent := func(event sdl.Event) {
+				switch e := event.(type) {
+				case *sdl.ControllerButtonEvent:
+					if e.Button > 3 { return }
 					
-					switch e := event.(type) {
-					case *sdl.ControllerButtonEvent:
-						switch e.State {
-						case sdl.PRESSED:
-							fmt.Print("Button pressed: ")
-						case sdl.RELEASED:
-							fmt.Print("Button release: ")
-						}
-						
-						fmt.Println(e.Button)
-					case *sdl.ControllerAxisEvent:
-						v := float64(e.Value) /32768.0
-						
-						if math.Abs(v) < 0.3 {
-							continue
-						}
-						
-						fmt.Println(e.Which, e.Axis, v)
-					
+					switch e.State {
+					case sdl.PRESSED:
+						state.pressed = true
+					case sdl.RELEASED:
+						state.pressed = false
 					}
+										
+				case *sdl.ControllerAxisEvent:
+					v := float32(e.Value) / 32768.0
 					
+					switch e.Axis {
+					case 0:
+						state.left.x = v
+					case 1:
+						state.left.y = v
+					case 2:
+						state.right.x = v
+					case 3:
+						state.right.y = v
+					}
+				
 				}
 				
-				time.Sleep(time.Duration(1000 / 120 * time.Millisecond) - time.Since(prev))
+			}
+			
+			for {
+				
+				
+				for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
+					processEvent(event)
+				}
+				
+				beh.EnableHeadSync = state.pressed
+				
+				go fmt.Println(state)
+				// go http.Post("http://" + visioner.address, "application/behavior", bytes.NewReader(beh.Serialize()))
+				
+				time.Sleep(time.Duration(1000 / 60 * time.Millisecond) - time.Since(prev))
 				prev = time.Now()
 			}
 			
