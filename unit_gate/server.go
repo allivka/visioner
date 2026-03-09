@@ -72,8 +72,6 @@ func serveGate(port serial.Port) func() {
 
 			case http.MethodGet:
 				angle := <-receiver
-				// fmt.Println(angle)
-				// angle := float32(23)
 				writer.WriteHeader(http.StatusOK)
 				buffer := make([]byte, 4)
 				binary.LittleEndian.PutUint32(buffer, math.Float32bits(angle))
@@ -100,17 +98,7 @@ func serveGate(port serial.Port) func() {
 		
 		defer listener.Close()
 		
-		connection, err := listener.Accept()
 		
-		for err != nil {
-			slog.Warn(err.Error())
-			connection, err = listener.Accept()
-		}
-		
-		defer connection.Close()
-		
-		writer := bufio.NewWriter(connection)
-		_ = writer
 		camera, err := gocv.OpenVideoCapture(0)
 		
 		if err != nil {
@@ -132,25 +120,60 @@ func serveGate(port serial.Port) func() {
 		)
 		
 		for {
-			if ok = camera.Read(&mat); !ok || mat.Empty() {
-				continue
-			}
+		
+			connection, err := listener.Accept()
 			
-			buff, err := gocv.IMEncode(".jpg", mat)
-			
-			if err != nil {
+			for err != nil {
 				slog.Warn(err.Error())
 				continue
 			}
 			
-			data := buff.GetBytes()
-			binary.Write(writer, binary.LittleEndian, uint32(len(data)))
-			writer.Write(data)
-			writer.Flush()
+			go func(connection net.Conn) {
+				writer := bufio.NewWriter(connection)
+				defer connection.Close()
+				
+				for {
+					if ok = camera.Read(&mat); !ok || mat.Empty() {
+						continue
+					}
+					
+					buff, err := gocv.IMEncode(".jpg", mat)
+					
+					if err != nil {
+						slog.Warn(err.Error())
+						continue
+					}
+					
+					data := buff.GetBytes()
+					
+					err = binary.Write(writer, binary.LittleEndian, uint32(len(data)))
+					
+					if err != nil {
+						slog.Warn(err.Error())
+						return
+					}
+					
+					_, err = writer.Write(data)
+					
+					if err != nil {
+						slog.Warn(err.Error())
+						return
+					}
+					
+					err = writer.Flush()
+					
+					if err != nil {
+						slog.Warn(err.Error())
+						return
+					}
+					
+					buff.Close()
+				}
+				
+			}(connection)
 			
-			buff.Close()
+			
 		}
-		
 	}()
 	
 	return func() {

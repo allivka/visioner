@@ -349,34 +349,37 @@ func main() {
 			
 			defer controller.Close()
 			
-			for event := sdl.PollEvent(); true; event = sdl.PollEvent() {
-				if event == nil {
-					sdl.Delay(10)
-					continue
-				}
-				
-				switch e := event.(type) {
-				case *sdl.ControllerButtonEvent:
-					switch e.State {
-					case sdl.PRESSED:
-						fmt.Print("Button pressed: ")
-					case sdl.RELEASED:
-						fmt.Print("Button release: ")
+			prev := time.Now()
+			
+			for {
+			
+				for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
+					
+					switch e := event.(type) {
+					case *sdl.ControllerButtonEvent:
+						switch e.State {
+						case sdl.PRESSED:
+							fmt.Print("Button pressed: ")
+						case sdl.RELEASED:
+							fmt.Print("Button release: ")
+						}
+						
+						fmt.Println(e.Button)
+					case *sdl.ControllerAxisEvent:
+						v := float64(e.Value) /32768.0
+						
+						if math.Abs(v) < 0.3 {
+							continue
+						}
+						
+						fmt.Println(e.Which, e.Axis, v)
+					
 					}
 					
-					fmt.Println(e.Button)
-				case *sdl.ControllerAxisEvent:
-					v := float64(e.Value) /32768.0
-					
-					if math.Abs(v) < 0.3 {
-						continue
-					}
-					
-					fmt.Println(e.Which, e.Axis, v)
-				
 				}
 				
-				sdl.Delay(10)
+				time.Sleep(time.Duration(1000 / 120 * time.Millisecond) - time.Since(prev))
+				prev = time.Now()
 			}
 			
 		}()
