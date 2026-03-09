@@ -350,11 +350,6 @@ func main() {
 			
 			prev := time.Now()
 			
-			beh := sci.Behavior {
-				Speed: 3000,
-				SpeedK: 1,
-			}
-			
 			type JoyStick struct {
 				x float32
 				y float32
@@ -366,7 +361,17 @@ func main() {
 				pressed bool
 			}
 			
-			state := GamePadState {}
+			state := GamePadState {
+				pressed: false,
+				left: JoyStick{
+					x: 0,
+					y :0,
+				},
+				right : JoyStick{
+					x: 0,
+					y : 0,
+				},
+			}
 			
 			processEvent := func(event sdl.Event) {
 				switch e := event.(type) {
@@ -398,6 +403,35 @@ func main() {
 				
 			}
 			
+			send := func(state GamePadState) {
+				
+				beh := sci.Behavior {
+					Speed: 3000,
+					SpeedK: 1,
+					ViewAngle: 0,
+					MotionAngle: 0,
+					EnableHeadSync: false,
+				}
+				
+				beh.EnableHeadSync = state.pressed
+				
+				beh.SpeedK = max(float32(math.Sqrt(float64(state.left.x * state.left.x + state.left.y * state.left.y)) / 1), 0.01)
+				
+				beh.MotionAngle = float32(math.Atan(float64(state.left.y) / float64(state.left.x) )) / math.Pi * 180 + 90
+				if state.left.x < 0 {
+					beh.MotionAngle -= 180
+				}
+				
+				beh.ViewAngle = float32(math.Atan(float64(state.right.y) / float64(state.right.x) )) / math.Pi * 180 + 90
+				if state.right.x < 0 {
+					beh.ViewAngle -= 180
+				}
+				
+				fmt.Printf("State := %v\n\tspeedK = %v\n\tmotionAngle = %v\n\tviewAngle = %v \n\n", state, beh.SpeedK, beh.MotionAngle, beh.ViewAngle)
+				// http.Post("http://" + visioner.address, "application/behavior", bytes.NewReader(beh.Serialize()))
+				
+			}
+			
 			for {
 				
 				
@@ -405,10 +439,7 @@ func main() {
 					processEvent(event)
 				}
 				
-				beh.EnableHeadSync = state.pressed
-				
-				go fmt.Println(state)
-				// go http.Post("http://" + visioner.address, "application/behavior", bytes.NewReader(beh.Serialize()))
+				go send(state)
 				
 				time.Sleep(time.Duration(1000 / 60 * time.Millisecond) - time.Since(prev))
 				prev = time.Now()
