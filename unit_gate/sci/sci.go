@@ -3,13 +3,12 @@ package sci
 //SCI = Serial Communication Interface
 
 import (
+	"bufio"
 	"context"
-	"encoding/binary"
 	"fmt"
-	"io"
 	"log"
 	"log/slog"
-	"math"
+	"strconv"
 	"time"
 
 	"go.bug.st/serial"
@@ -60,8 +59,7 @@ func RunSCI(ctx context.Context, c SCIConfig) chan float32 {
 
 		var (
 			err   error
-			value float32
-			n int
+			value float64
 		)
 
 		err = c.Port.SetReadTimeout(c.ReadTimeout)
@@ -79,20 +77,23 @@ func RunSCI(ctx context.Context, c SCIConfig) chan float32 {
 				return
 
 			default:				
-				n, err = io.ReadFull(c.Port, buffer)
+				buffer, _, err = bufio.NewReader(c.Port).ReadLine()
 
 				if err != nil {
 					slog.Warn(fmt.Sprintf("Failed receiving data over serial port: %v", err))
 					continue
 				}
 				
-				if n < 4 {
-					slog.Warn("Got less data then expected")
+				value, err = strconv.ParseFloat(string(buffer), 32)
+				
+				if err != nil {
+					slog.Warn(err.Error())
+					continue
 				}
 				
-				value = math.Float32frombits(binary.LittleEndian.Uint32(buffer[:4]))
+				// go fmt.Println(value)
 				
-				serialReceiver <- value
+				serialReceiver <- float32(value)
 
 				
 			}

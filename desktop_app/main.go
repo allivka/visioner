@@ -189,7 +189,7 @@ func main() {
 		visioner.address = input.Text
 		_, err := visioner.getAngle()
 		
-		if err != nil && input.Text != "pass" {
+		if err != nil {
 			dialog.ShowInformation("Error, Invalid visioner device address", err.Error(), loginWindow)
 			return
 		}
@@ -344,6 +344,8 @@ func main() {
 						}
 					}
 				}
+				
+				time.Sleep(1 * time.Second)
 			}
 			
 			defer controller.Close()
@@ -386,7 +388,11 @@ func main() {
 					}
 										
 				case *sdl.ControllerAxisEvent:
-					v := float32(e.Value) / 32768.0
+					v := float32(math.Round(float64(e.Value) / 32768.0 * 100) / 100)
+					
+					if v >= -0.2 && v <= 0.2 {
+						v = 0
+					}
 					
 					switch e.Axis {
 					case 0:
@@ -402,7 +408,7 @@ func main() {
 				}
 				
 			}
-			
+						
 			send := func(state GamePadState) {
 				
 				beh := sci.Behavior {
@@ -415,20 +421,21 @@ func main() {
 				
 				beh.EnableHeadSync = state.pressed
 				
-				beh.SpeedK = max(float32(math.Sqrt(float64(state.left.x * state.left.x + state.left.y * state.left.y)) / 1), 0.01)
+				beh.SpeedK = float32(math.Round(math.Sqrt(float64(state.left.x * state.left.x + state.left.y * state.left.y)) * 100) / 100)
 				
-				beh.MotionAngle = float32(math.Atan(float64(state.left.y) / float64(state.left.x) )) / math.Pi * 180 + 90
+				beh.MotionAngle = float32(math.Round(math.Atan(float64(state.left.y) / float64(state.left.x) ) * 100) / 100) / math.Pi * 180 + 90
 				if state.left.x < 0 {
 					beh.MotionAngle -= 180
 				}
 				
-				beh.ViewAngle = float32(math.Atan(float64(state.right.y) / float64(state.right.x) )) / math.Pi * 180 + 90
+				beh.ViewAngle = float32(math.Round(math.Atan(float64(state.right.y) / float64(state.right.x) ) * 100) / 100) / math.Pi * 180 + 90
 				if state.right.x < 0 {
 					beh.ViewAngle -= 180
+					
 				}
 				
-				fmt.Printf("State := %v\n\tspeedK = %v\n\tmotionAngle = %v\n\tviewAngle = %v \n\n", state, beh.SpeedK, beh.MotionAngle, beh.ViewAngle)
-				// http.Post("http://" + visioner.address, "application/behavior", bytes.NewReader(beh.Serialize()))
+				// fmt.Printf("State := %v\n\tspeedK = %v\n\tmotionAngle = %v\n\tviewAngle = %v \n\n", state, beh.SpeedK, beh.MotionAngle, beh.ViewAngle)
+				http.Post("http://" + visioner.address, "application/behavior", bytes.NewReader(beh.Serialize()))
 				
 			}
 			

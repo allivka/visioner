@@ -55,9 +55,8 @@ func serveGate(port serial.Port) func() {
 			}
 
 			switch request.Method {
-			case http.MethodPut:
-				fallthrough
 			case http.MethodPost:
+				
 				behavior, err := sci.ValidateBehaviorBuffer(body)
 
 				if err != nil {
@@ -66,11 +65,14 @@ func serveGate(port serial.Port) func() {
 					writer.Write([]byte(err.Error()))
 					return
 				}
+				
+				// go fmt.Println(behavior)
 
 				in <- behavior
 				writer.WriteHeader(http.StatusOK)
 
 			case http.MethodGet:
+				
 				angle := <-receiver
 				writer.WriteHeader(http.StatusOK)
 				buffer := make([]byte, 4)
